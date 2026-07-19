@@ -1,27 +1,14 @@
 {
   "name": "나만의 가계부",
   "short_name": "가계부",
-  "description": "나만의 개인 재무 관리 앱 - 작은앱공방",
-  "start_url": "./index.html",
+  "description": "재무상태표·운영성과표까지 만드는 제대로 된 가계부",
+  "start_url": ".",
+  "scope": ".",
   "display": "standalone",
-  "background_color": "#1A3A8F",
-  "theme_color": "#1A3A8F",
-  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
   "icons": [
-    {
-      "src": "icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "categories": ["finance", "productivity"],
-  "lang": "ko",
-  "dir": "ltr"
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
 }
