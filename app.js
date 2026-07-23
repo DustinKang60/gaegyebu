@@ -841,7 +841,26 @@ var app = {
       console.warn('Share API 실패:', shareErr.message || shareErr);
     }
 
-    // 3순위: 클립보드 폴백
+    // 3순위: 파일 다운로드 (웹 표준 — PC 브라우저에서는 이게 정상 경로다)
+    // 예전에는 이 단계가 없어서 PC에서 백업하면 파일 대신 클립보드로만
+    // 복사됐다. 가계부는 기록을 잃으면 복구할 방법이 없으므로 실제 파일로
+    // 받아둘 수 있어야 한다.
+    try {
+      var url = URL.createObjectURL(new Blob([dataStr], { type: 'application/json' }));
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+      alert('✅ 백업 파일을 내려받았습니다.\n📁 ' + fileName + '\n(브라우저의 다운로드 폴더를 확인하세요)');
+      return;
+    } catch(dlErr) {
+      console.warn('다운로드 실패, 클립보드 시도:', dlErr.message || dlErr);
+    }
+
+    // 4순위: 클립보드 폴백
     this.fallbackCopy(dataStr);
   },
   
@@ -859,7 +878,53 @@ var app = {
     document.body.removeChild(textArea);
   },
 
-  importData: function(i){ if(!i.files[0])return; var r=new FileReader(); r.onload=function(e){try{var d=JSON.parse(e.target.result);app.db.data=Object.assign(app.db.data,d);app.save();alert("복구 성공");location.reload();}catch(x){alert("오류");}}; r.readAsText(i.files[0]); },
+  importData: function(i){
+    if(!i.files[0]) return;
+    var fileInput = i;
+    var reset = function(){ try { fileInput.value = ''; } catch(_){} };
+    var r = new FileReader();
+    r.onerror = function(){ alert('❌ 파일을 읽지 못했습니다. 다시 시도해 주세요.'); reset(); };
+    r.onload = function(e){
+      var d;
+      try {
+        d = JSON.parse(e.target.result);
+      } catch(x) {
+        alert('❌ 백업 파일을 읽을 수 없습니다.\n가계부에서 내보낸 .json 파일이 맞는지 확인해 주세요.');
+        reset(); return;
+      }
+
+      // 가계부 백업이 맞는지 확인한다. 예전에는 아무 JSON이나 그대로 받아들여서
+      // 엉뚱한 파일을 골라도 "복구 성공"이라고 알렸다.
+      if (!d || typeof d !== 'object' || !Array.isArray(d.transactions)) {
+        alert('❌ 가계부 백업 파일이 아닙니다.\n(거래 내역을 찾을 수 없습니다)');
+        reset(); return;
+      }
+
+      var nNew = d.transactions.length;
+      var nCur = (app.db.data.transactions || []).length;
+
+      // 복구는 지금 기록을 덮어쓴다. 예전에는 확인 한 번 없이 즉시 바꿔서
+      // 파일을 잘못 고르면 가계부가 통째로 사라졌다.
+      if (!confirm('복구하면 지금 기록이 백업 파일 내용으로 바뀝니다.\n\n현재: 거래 ' + nCur + '건\n백업본: 거래 ' + nNew + '건\n\n진행할까요?')) {
+        reset(); return;
+      }
+
+      // 잘못 복구했을 때를 대비해 직전 상태를 따로 남긴다.
+      try {
+        localStorage.setItem(app.db.mainKey + '_before_restore', JSON.stringify(app.db.data));
+      } catch(_){}
+
+      // 기본 구조 위에 파일 내용을 얹는다. 파일에 없는 항목은 기존 값을 유지한다.
+      app.db.data = Object.assign({
+        transactions: [], assetEntries: [], templates: [],
+        categories: app.db.data.categories, settings: app.db.data.settings
+      }, d);
+      app.save();
+      alert('✅ 복구 완료 — 거래 ' + nNew + '건을 불러왔습니다.');
+      location.reload();
+    };
+    r.readAsText(i.files[0]);
+  },
   setAnalysisPeriod: function(p){ 
     var end=new Date(), start=new Date(); 
     if(p==='month')start.setDate(1);

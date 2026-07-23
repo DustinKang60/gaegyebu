@@ -1,6 +1,6 @@
 // 나만의 가계부 v2.0 — service worker
 // CACHE_NAME 버전을 올리면 옛 캐시가 activate 때 모두 삭제되고 새로 받는다.
-var CACHE = 'gaegyebu-v2-0-0';
+var CACHE = 'gaegyebu-v2-0-1';
 var ASSETS = ['./', './index.html', './app.js', './style.css', './manifest.json', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', function (e) {
